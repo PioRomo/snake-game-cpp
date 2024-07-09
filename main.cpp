@@ -7,9 +7,11 @@ using namespace std;
 
 Color teal = {0, 109, 117, 255};
 Color orange = {234, 114, 0, 255};
+Color black = {0,0,0,255};
 
 int cellSize = 25; 
 int cellCount = 20; 
+int offset = 75; 
 
 double lastUpdateTime = 0; 
 
@@ -42,7 +44,7 @@ class Snake{
             for(unsigned int i = 0; i < body.size(); i++){
                 int x = body[i].x; 
                 int y = body[i].y; 
-                Rectangle segment = Rectangle{(float) x * cellSize, (float) y * cellSize, (float) cellSize, (float) cellSize};
+                Rectangle segment = Rectangle{(float)offset+ x * cellSize, (float) offset+ y * cellSize, (float) cellSize, (float) cellSize};
                 DrawRectangleRounded(segment, 0.5, 6, orange); 
             }
         }
@@ -82,7 +84,7 @@ class Food{
         }
 
         void Draw(){
-            DrawTexture(texture, position.x * cellSize, position.y * cellSize, WHITE); 
+            DrawTexture(texture, offset + position.x * cellSize, offset + position.y * cellSize, WHITE); 
         }
 
         Vector2 GenerateRandomCell(){
@@ -106,6 +108,21 @@ class Game{
         Snake snake = Snake(); 
         Food food = Food(snake.body); 
         bool running = true; 
+        int score = 0; 
+        Sound eatSound; 
+        Sound wallSound; 
+
+    Game(){
+        InitAudioDevice();
+        eatSound = LoadSound("Sounds/eat.mp3");
+        wallSound = LoadSound("Sounds/wall.mp3"); 
+    }
+
+    ~Game(){
+        UnloadSound(eatSound);
+        UnloadSound(wallSound);
+        CloseAudioDevice(); 
+    }
     
     void Draw(){
         snake.Draw(); 
@@ -125,6 +142,8 @@ class Game{
         if(Vector2Equals(snake.body[0], food.position)){
             food.position = food.GenerateRandomPos(snake.body); 
             snake.addSegment = true; 
+            score++; 
+            PlaySound(eatSound);
         }
     }
 
@@ -141,6 +160,8 @@ class Game{
         snake.Reset(); 
         food.position = food.GenerateRandomPos(snake.body);
         running = false; 
+        score = 0; 
+        PlaySound(wallSound); 
     }
 
     void CheckCollisionWithTail(){
@@ -153,7 +174,7 @@ class Game{
 };
 int main(){
 
-    InitWindow(cellSize * cellCount, cellSize * cellCount, "Snake Game C++");
+    InitWindow(2*offset + cellSize * cellCount, 2*offset + cellSize * cellCount, "Snake Game C++");
     SetTargetFPS(60);
 
     Game game = Game(); 
@@ -184,6 +205,9 @@ int main(){
 
         //Drawing
         ClearBackground(teal);
+        DrawRectangleLinesEx(Rectangle{(float)offset-5, (float)offset-5, (float)cellSize*cellCount+10, (float)cellSize*cellCount+10}, 5, black);
+        DrawText("Snake Game C++" ,offset-20 ,20, 40, black);
+        DrawText(TextFormat("Score: %i", game.score), offset-5, offset+cellSize*cellCount+10, 40, black);
         game.Draw(); 
         EndDrawing(); 
     }
